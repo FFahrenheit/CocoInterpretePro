@@ -24,6 +24,8 @@ public class Interpreter extends JFrame
     protected JButton play;
     protected JButton info;
     private String[] instructions;
+    private String actualVar;
+    private int varValue;
     
     Interpreter()
     {
@@ -82,12 +84,10 @@ public class Interpreter extends JFrame
                     + "DOWN: Mueve hacia abajo\n"
                     + "LEFT: Mueve hacia la izquierda\n"
                     + "RIGHT: Mueve hacia la derecha\n"
-                    + "RAUP: Brazo derecho arriba\n"
-                    + "RADOWN: Brazo derecho abajo\n"
-                    + "RASTEADY: Brazo derecho estático\n"
-                    + "LAUP: Brazo derecho arriba\n"
-                    + "LADOWN: Brazo izquierdo abajo\n"
-                    + "LASTEADY: Brazo izquierdo estático\n"
+                    + "RA[UP/DOWN/STEADY]: Acción brazo derecho\n"
+                    + "LA[UP/DOWN/STEADY]: Acción brazo izquierdo\n"
+                    + "LL[UP/DOWN/STEADY]: Acción pierna izquierda\n"
+                    + "RR[UP/DOWN/STEADY]: Acción pierna derecha\n"
                     + "FOR [var] [inicio] [hasta] [paso]: Ciclo"); 
         });
         this.add(info);
@@ -103,6 +103,10 @@ public class Interpreter extends JFrame
             {
                 i = i + nextFor(i);
             }
+            else if(isIf(instructions[i]))
+            {
+                i = i + nextIf(i);
+            }
             else if(!nextLine(i))
             {
                 break;
@@ -110,28 +114,115 @@ public class Interpreter extends JFrame
         }
     }
     
-    protected int nextFor(int i)
+    protected int nextIf(int k)
     {
-        int counter=0;
+        System.out.println("Es if");
+        int i = k + 1;
+        if(instructions[i].equals("["))
+        {
+            i++;
+            do
+            {
+                if(evaluate(instructions[k]))
+                {
+                    if(isFor(instructions[i]))
+                    {
+                        i = i + nextFor(i);
+                    }
+                    if(isIf(instructions[i]))
+                    {
+                        i = i + nextIf(i);
+                    }
+                    else if(!nextLine(i))
+                    {
+                        break;
+                    }
+                }
+                i++;
+            }while(!instructions[i].equals("]"));
+        }
+        return i-k;
+    }
+    
+    protected boolean evaluate(String s)
+    {
+        s = s.substring(3, s.length());
+        String[] args = s.split(" ");
+        if(args.length==3)
+        {
+            int value = Integer.parseInt(args[2]);
+            return value == varValue && actualVar.equals(args[0]);
+        }
+        else if(actualVar.equals(args[0]))
+        {
+            int value = varValue;
+            int b = Integer.parseInt(args[2]);
+            int c = Integer.parseInt(args[4]);
+            switch(args[1])
+            {
+                case "*":
+                    value = varValue * b;
+                    break;
+                case "+":
+                    value = varValue + b;
+                    break;
+                case "/":
+                    value = varValue / b;
+                    break;
+                case "%":
+                    value = varValue % b; 
+                    break;
+                case "-":
+                    value = varValue - b; 
+                    break;
+            }
+            return value == c;
+        }
+        return false;
+    }
+    
+    protected boolean isIf(String s)
+    {
+        String regex = "^IF \\w{1} = [0-9]+$";
+        String regex2 = "IF \\w{1} [\\*|\\\\|\\%|\\+\\-] [0-9]+ = [0-9]+$";
+        return s.matches(regex)|| s.matches(regex2);
+    }
+    
+    protected int nextFor(int k)
+    {
+        int i=0;
         System.out.println("Es for");
-        String[] args = getForParameters(instructions[i]);
+        String[] args = getForParameters(instructions[k]);
+        actualVar = args[0];
         int begin =  Integer.parseInt(args[1]);
         int end = Integer.parseInt(args[2]);
         int step = Integer.parseInt(args[3]);
         for (int j =begin; j < end ; j = j + step) 
         {
-            counter = 1;
-            if(instructions[i+counter].equals("["))
+            varValue = j;
+            i = k + 1;
+            if(instructions[i].equals("["))
             {
-                counter++;
+                i++;
                 do
                 {
-                    nextLine(i+counter);
-                    counter++;
-                }while(!instructions[i+counter].equals("]"));    
+                    if(isFor(instructions[i]))
+                    {
+                        i = i + nextFor(i);
+                    }
+                    if(isIf(instructions[i]))
+                    {
+                        i = i + nextIf(i);
+                    }
+                    else if(!nextLine(i))
+                    {
+                        break;
+                    }
+                    i++;
+                }while(!instructions[i].equals("]"));    
             }
         }
-        return counter;
+        return i-k;
     }
     
     protected boolean nextLine(int i)
@@ -139,7 +230,7 @@ public class Interpreter extends JFrame
         if(!processInstruction(instructions[i]))
         {
             JOptionPane pop = new JOptionPane();
-            pop.showMessageDialog(null, "Error de sintaxis en línea "+i+1);
+            pop.showMessageDialog(null, "Error de sintaxis en línea "+(i+1));
             return false;
         }
         else
