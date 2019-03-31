@@ -2,6 +2,7 @@ package cocointerpretepro;
 
 import java.awt.Font;
 import java.awt.Graphics;
+import java.util.Hashtable;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -24,8 +25,7 @@ public class Interpreter extends JFrame
     protected JButton play;
     protected JButton info;
     private String[] instructions;
-    private String actualVar;
-    private int varValue;
+    Hashtable<String, Integer> vars;
     
     Interpreter()
     {
@@ -35,6 +35,7 @@ public class Interpreter extends JFrame
         rightArm = 0;
         rightLeg = 0;
         leftLeg = 0;
+        vars = new Hashtable<String, Integer>();
         initWindow();
         initComponents();
         this.setLayout(null);
@@ -88,7 +89,8 @@ public class Interpreter extends JFrame
                     + "LA[UP/DOWN/STEADY]: Acción brazo izquierdo\n"
                     + "LL[UP/DOWN/STEADY]: Acción pierna izquierda\n"
                     + "RR[UP/DOWN/STEADY]: Acción pierna derecha\n"
-                    + "FOR [var] [inicio] [hasta] [paso]: Ciclo"); 
+                    + "FOR [var] [inicio] [hasta] [paso]: Ciclo"
+                    + "ID [var] [*,/,+/-,%] [=,!=] [val]"); 
         });
         this.add(info);
     }
@@ -99,20 +101,26 @@ public class Interpreter extends JFrame
         instructions = code.split("\n");
         for (int i = 0; i < instructions.length; i++) 
         {
-            if(isFor(instructions[i]))
-            {
-                i = i + nextFor(i);
-            }
-            else if(isIf(instructions[i]))
-            {
-                i = i + nextIf(i);
-            }
-            else if(!nextLine(i))
-            {
-                break;
-            }
+            i = nextInstruction(i);
         }
     }
+    
+    protected int nextInstruction(int i)
+    {
+        if(isFor(instructions[i]))
+        {
+            i = i + nextFor(i);
+        }
+        else if(isIf(instructions[i]))
+        {
+            i = i + nextIf(i);
+        }
+        else if(!nextLine(i))
+        {
+            i = instructions.length;
+        }
+        return i;
+    }    
     
     protected int nextIf(int k)
     {
@@ -125,18 +133,7 @@ public class Interpreter extends JFrame
             {
                 if(evaluate(instructions[k]))
                 {
-                    if(isFor(instructions[i]))
-                    {
-                        i = i + nextFor(i);
-                    }
-                    if(isIf(instructions[i]))
-                    {
-                        i = i + nextIf(i);
-                    }
-                    else if(!nextLine(i))
-                    {
-                        break;
-                    }
+                    i = nextInstruction(i);
                 }
                 i++;
             }while(!instructions[i].equals("]"));
@@ -148,12 +145,25 @@ public class Interpreter extends JFrame
     {
         s = s.substring(3, s.length());
         String[] args = s.split(" ");
+        if(vars.get(args[0]) == null)
+        {
+            System.out.println("Variable no encontrada");
+            return false;
+        }
+        Integer varValue = vars.get(args[0]);
         if(args.length==3)
         {
             int value = Integer.parseInt(args[2]);
-            return value == varValue && actualVar.equals(args[0]);
+            if(args[1].equals("=")||args[1].equals("=="))
+            {
+                return value == varValue;
+            }
+            else if(args[1].equals("!="))
+            {
+                return value != varValue;
+            }
         }
-        else if(actualVar.equals(args[0]))
+        else
         {
             int value = varValue;
             int b = Integer.parseInt(args[2]);
@@ -176,7 +186,7 @@ public class Interpreter extends JFrame
                     value = varValue - b; 
                     break;
             }
-            return value == c;
+            return (args[1].equals("!="))?  value != c  : value == c ;
         }
         return false;
     }
@@ -193,31 +203,20 @@ public class Interpreter extends JFrame
         int i=0;
         System.out.println("Es for");
         String[] args = getForParameters(instructions[k]);
-        actualVar = args[0];
+        vars.put(args[0], 0);
         int begin =  Integer.parseInt(args[1]);
         int end = Integer.parseInt(args[2]);
         int step = Integer.parseInt(args[3]);
         for (int j =begin; j < end ; j = j + step) 
         {
-            varValue = j;
+            vars.replace(args[0], j);
             i = k + 1;
             if(instructions[i].equals("["))
             {
                 i++;
                 do
                 {
-                    if(isFor(instructions[i]))
-                    {
-                        i = i + nextFor(i);
-                    }
-                    if(isIf(instructions[i]))
-                    {
-                        i = i + nextIf(i);
-                    }
-                    else if(!nextLine(i))
-                    {
-                        break;
-                    }
+                    i = nextInstruction(i);
                     i++;
                 }while(!instructions[i].equals("]"));    
             }
