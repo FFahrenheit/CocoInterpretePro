@@ -126,7 +126,7 @@ public class Interpreter extends JFrame
     protected int findEndIf(int k)
     {
         int nextLine = k, counter = 1;
-        for (int i = k+1;i < instructions.length; i++) 
+        for (int i = k+2;i < instructions.length; i++) 
         {
             if(instructions[i].equals("["))
             {
