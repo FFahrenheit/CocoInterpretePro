@@ -88,9 +88,9 @@ public class Interpreter extends JFrame
                     + "RA[UP/DOWN/STEADY]: Acción brazo derecho\n"
                     + "LA[UP/DOWN/STEADY]: Acción brazo izquierdo\n"
                     + "LL[UP/DOWN/STEADY]: Acción pierna izquierda\n"
-                    + "RR[UP/DOWN/STEADY]: Acción pierna derecha\n"
+                    + "RL[UP/DOWN/STEADY]: Acción pierna derecha\n"
                     + "FOR [var] [inicio] [hasta] [paso]: Ciclo"
-                    + "ID [var] [*,/,+/-,%] [=,!=] [val]"); 
+                    + "ID [var] [*,/,+/-,%] [=,!] [val]"); 
         });
         this.add(info);
     }
@@ -101,6 +101,7 @@ public class Interpreter extends JFrame
         instructions = code.split("\n");
         for (int i = 0; i < instructions.length; i++) 
         {
+            System.out.println("Valor de i final: "+i);
             i = nextInstruction(i);
         }
     }
@@ -122,21 +123,44 @@ public class Interpreter extends JFrame
         return i;
     }    
     
+    protected int findEndIf(int k)
+    {
+        int nextLine = k, counter = 1;
+        for (int i = k+1;i < instructions.length; i++) 
+        {
+            if(instructions[i].equals("["))
+            {
+                counter++;
+            }
+            else if(instructions[i].equals("]"))
+            {
+                counter--;
+            }
+            if(counter==0)
+            {
+                return i;
+            }
+        }
+        return nextLine;
+    }
+    
     protected int nextIf(int k)
     {
         System.out.println("Es if");
         int i = k + 1;
         if(instructions[i].equals("["))
         {
+            boolean execute = evaluate(instructions[k]);
             i++;
-            do
+            if(!execute)
             {
-                if(evaluate(instructions[k]))
-                {
-                    i = nextInstruction(i);
-                }
+                i = findEndIf(k);
+            }
+            while(!instructions[i].equals("]") && execute)
+            {
+                i = nextInstruction(i);
                 i++;
-            }while(!instructions[i].equals("]"));
+            }
         }
         return i-k;
     }
@@ -154,11 +178,11 @@ public class Interpreter extends JFrame
         if(args.length==3)
         {
             int value = Integer.parseInt(args[2]);
-            if(args[1].equals("=")||args[1].equals("=="))
+            if(args[1].equals("="))
             {
                 return value == varValue;
             }
-            else if(args[1].equals("!="))
+            else if(args[1].equals("!"))
             {
                 return value != varValue;
             }
@@ -186,15 +210,16 @@ public class Interpreter extends JFrame
                     value = varValue - b; 
                     break;
             }
-            return (args[1].equals("!="))?  value != c  : value == c ;
+            System.out.println(args[0]+"("+varValue+")"+args[1]+args[2]+args[3]+(value==c));
+            return (args[3].equals("!"))?  value != c  : value == c ;
         }
         return false;
     }
     
     protected boolean isIf(String s)
     {
-        String regex = "^IF \\w{1} = [0-9]+$";
-        String regex2 = "IF \\w{1} [\\*|\\\\|\\%|\\+\\-] [0-9]+ = [0-9]+$";
+        String regex = "^IF \\w{1} [\\=|\\!] [0-9]+$";
+        String regex2 = "^IF \\w{1} [\\*|\\\\|\\%|\\+|\\-] [0-9]+ [\\=|\\!] [0-9]+$";
         return s.matches(regex)|| s.matches(regex2);
     }
     
@@ -207,18 +232,18 @@ public class Interpreter extends JFrame
         int begin =  Integer.parseInt(args[1]);
         int end = Integer.parseInt(args[2]);
         int step = Integer.parseInt(args[3]);
-        for (int j =begin; j < end ; j = j + step) 
+        for (int j =begin; j <= end ; j = j + step) 
         {
             vars.replace(args[0], j);
             i = k + 1;
             if(instructions[i].equals("["))
             {
                 i++;
-                do
+                while(i >= instructions.length||!instructions[i].equals("]"))
                 {
                     i = nextInstruction(i);
                     i++;
-                }while(!instructions[i].equals("]"));    
+                }
             }
         }
         return i-k;
@@ -302,15 +327,17 @@ public class Interpreter extends JFrame
             case "LLSTEADY":
                 leftLeg = 0;
                 break;
-            case "RRUP":
+            case "RLUP":
                 rightLeg = 1;
                 break;
-            case "RRDOWN":
+            case "RLDOWN":
                 rightLeg = -1;
                 break;
-            case "RRSTEADY":
+            case "RLSTEADY":
                 rightLeg = 0;
                 break;
+            case "]":
+                System.out.println("Tal vez no es error de sintaxis");
             default:
                 return false;
         }
