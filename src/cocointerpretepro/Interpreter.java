@@ -27,6 +27,9 @@ public class Interpreter extends JFrame
     private String[] instructions;
     Hashtable<String, Integer> vars;
     
+    /**
+     * Inicializa las variables, ventanas y componentes
+     */
     Interpreter()
     {
         this.x = 0;
@@ -41,6 +44,9 @@ public class Interpreter extends JFrame
         this.setLayout(null);
     }
     
+    /**
+     * Inicializa la ventana
+     */
     protected void initWindow()
     {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -49,6 +55,9 @@ public class Interpreter extends JFrame
         this.getContentPane().setBackground(java.awt.Color.black);
     }
     
+    /**
+     * Inicializa los componentes
+     */
     protected void initComponents()
     {
         console = new JTextArea();
@@ -95,6 +104,10 @@ public class Interpreter extends JFrame
         this.add(info);
     }
     
+    /**
+     * Inicia con la llamada a todas las instrucciones en
+     * el intérprete
+     */
     protected void begin()
     {
         String code = console.getText();
@@ -106,6 +119,11 @@ public class Interpreter extends JFrame
         }
     }
     
+    /**
+     * Realiza la llamada al tipo de instruccion segun la instruccion
+     * @param numero de instruccion
+     * @return estado final del numero de instruccion
+     */
     protected int nextInstruction(int i)
     {
         if(isFor(instructions[i]))
@@ -123,6 +141,11 @@ public class Interpreter extends JFrame
         return i;
     }    
     
+    /**
+     * Encuentra el final de un if si no se ejecuta la condición
+     * @param posicion del if
+     * @return final del if que no se entró
+     */
     protected int findEndIf(int k)
     {
         int nextLine = k, counter = 1;
@@ -144,6 +167,11 @@ public class Interpreter extends JFrame
         return nextLine;
     }
     
+    /**
+     * Evalua las instrucciones dentro de un if
+     * @param k posición del if
+     * @return posición final después de ejecutarse el if
+     */
     protected int nextIf(int k)
     {
         System.out.println("Es if");
@@ -165,6 +193,11 @@ public class Interpreter extends JFrame
         return i-k;
     }
     
+    /**
+     * Evalua una condicional
+     * @param s condicional
+     * @return evaluación de la condicional
+     */
     protected boolean evaluate(String s)
     {
         s = s.substring(3, s.length());
@@ -216,6 +249,11 @@ public class Interpreter extends JFrame
         return false;
     }
     
+    /**
+     * Verifica si se cumple la sintaxis de un if
+     * @param s if
+     * @return si se cumple la sintaxis
+     */
     protected boolean isIf(String s)
     {
         String regex = "^IF \\w{1} [\\=|\\!] [0-9]+$";
@@ -223,6 +261,11 @@ public class Interpreter extends JFrame
         return s.matches(regex)|| s.matches(regex2);
     }
     
+    /**
+     * Evalua las instrucciones dentro de un for
+     * @param k Posición del for
+     * @return Posición final del for tras ser ejecutado
+     */
     protected int nextFor(int k)
     {
         int i=0;
@@ -249,6 +292,11 @@ public class Interpreter extends JFrame
         return i-k;
     }
     
+    /**
+     * Evalua la linea
+     * @param i Linea a evaluar
+     * @return final de la linea 
+     */
     protected boolean nextLine(int i)
     {
         if(!processInstruction(instructions[i]))
@@ -272,11 +320,22 @@ public class Interpreter extends JFrame
         return true;
     }
     
+    /**
+     * Verifica si se cumple la sintaxis de for
+     * @param s sintaxis a verificar
+     * @return si es for
+     */
     protected boolean isFor(String s)
     {
         String regex = "^FOR \\w{1} [0-9]+ [0-9]+ [0-9]+$";
         return s.matches(regex);
     }
+    
+    /**
+     * Retorna los parámetros de un for
+     * @param s for en línea
+     * @return parámetros del for
+     */
     
     protected String[] getForParameters(String s)
     {
@@ -284,6 +343,11 @@ public class Interpreter extends JFrame
         return s.split(" ");
     }
     
+    /**
+     * Proceso una instrucción simple
+     * @param instruction
+     * @return si se cumple la sintaxis o no
+     */
     protected boolean processInstruction(String instruction)
     {
         switch(instruction)
@@ -344,6 +408,10 @@ public class Interpreter extends JFrame
         return true;
     }
     
+    /**
+     * Imprime los gráficos
+     * @param g 
+     */
     @Override
     public void paint(Graphics g)
     {
